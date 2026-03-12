@@ -12,7 +12,7 @@
         .category-section { display: block; }
     </style>
 </head>
-<body class="bg-gray-50 pb-24">
+<body class="bg-gray-50 pb-32">
     <header class="bg-white p-4 shadow-sm sticky top-0 z-30">
         <div class="flex items-center justify-between mb-4">
             <a href="/" class="text-xl">🏠</a>
@@ -63,19 +63,13 @@
         </section>
         {% endif %}
         {% endfor %}
+
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-8">
+            <h3 class="font-bold text-gray-700 mb-2">Detail Pengiriman:</h3>
+            <input type="text" id="nama-pemesan" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg outline-none focus:ring-2 focus:ring-orange-500">
+            <textarea id="alamat-pemesan" placeholder="Alamat lengkap / Link Google Maps" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+        </div>
     </main>
-
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-       <h3 class="font-bold text-gray-700 mb-2">Detail Pengiriman:</h3>
-       <input type="text" id="nama-pemesan" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg outline-none">
-       <textarea id="alamat-pemesan" placeholder="Alamat lengkap / Link Google Maps (share location)" class="w-full p-2 border rounded-lg outline-none"></textarea>
-    </div>
-
-    <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50">
-       <button onclick="sendToWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
-           🛒 Checkout ke WhatsApp (<span id="cart-count">0</span>)
-       </button>
-    </div>
 
     <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50">
         <button onclick="sendToWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
@@ -84,18 +78,13 @@
     </div>
 
     <script>
-        // 1. Inisialisasi Cart di paling atas
         let cart = {};
 
-        // 2. Fungsi Toggle Pencarian (diperbaiki agar tidak error jika icon tidak ada)
         function toggleSearch() {
             const searchBar = document.getElementById('search-bar');
-            if (searchBar) {
-                searchBar.classList.toggle('hidden');
-            }
+            if (searchBar) searchBar.classList.toggle('hidden');
         }
 
-        // 3. Fungsi Kategori
         function showCategory(catName, btn) {
             const sections = document.querySelectorAll('.category-section');
             sections.forEach(sec => {
@@ -109,55 +98,45 @@
             btn.classList.add('bg-orange-600', 'text-white');
         }
 
-        // 4. Fungsi Tambah ke Keranjang (PASTI BEKERJA)
         function addToCart(name, price) {
             if (!cart[name]) {
                 cart[name] = { price: price, qty: 1 };
             } else {
                 cart[name].qty += 1;
             }
-            
-            // Update angka di tombol keranjang
-            const totalItems = Object.values(cart).reduce((a, b) => a + b.qty, 0);
-            document.getElementById('cart-count').innerText = totalItems;
-            
-            // Beri notifikasi kecil agar user tahu sudah terklik
-            console.log("Keranjang sekarang:", cart);
+            document.getElementById('cart-count').innerText = Object.values(cart).reduce((a, b) => a + b.qty, 0);
         }
 
-        // 5. Fungsi WhatsApp (PASTI BEKERJA)
         function sendToWhatsApp() {
-    // Ambil data dari form
-    let nama = document.getElementById('nama-pemesan').value;
-    let alamat = document.getElementById('alamat-pemesan').value;
+            let nama = document.getElementById('nama-pemesan').value;
+            let alamat = document.getElementById('alamat-pemesan').value;
 
-    if (Object.keys(cart).length === 0) {
-        alert("Keranjang masih kosong!");
-        return;
-    }
-    
-    if (!nama || !alamat) {
-        alert("Mohon isi Nama dan Alamat/Lokasi Anda.");
-        return;
-    }
+            if (Object.keys(cart).length === 0) {
+                alert("Keranjang masih kosong!");
+                return;
+            }
+            if (!nama || !alamat) {
+                alert("Mohon isi Nama dan Alamat pengiriman.");
+                return;
+            }
 
-    let msg = "*Pesanan Baru - Pujasera Digital*\n\n";
-    msg += `*Nama:* ${nama}\n`;
-    msg += `*Alamat/Lokasi:* ${alamat}\n\n`;
-    msg += "*Daftar Pesanan:*\n";
+            let msg = "*Pesanan Baru - Pujasera Digital*\n\n";
+            msg += `*Nama:* ${nama}\n`;
+            msg += `*Alamat/Lokasi:* ${alamat}\n\n`;
+            msg += "*Daftar Pesanan:*\n";
 
-    let total = 0;
-    for (let name in cart) {
-        let item = cart[name];
-        msg += `• ${name} (${item.qty}x): Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
-        total += (item.price * item.qty);
-    }
-
-    msg += `\n*Total Tagihan: Rp ${total.toLocaleString('id-ID')}*`;
-    
-    const waUrl = "https://wa.me/628123456789?text=" + encodeURIComponent(msg);
-    window.open(waUrl, '_blank');
-}
+            let total = 0;
+            for (let name in cart) {
+                let item = cart[name];
+                msg += `• ${name} (${item.qty}x): Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
+                total += (item.price * item.qty);
+            }
+            msg += `\n*Total Tagihan: Rp ${total.toLocaleString('id-ID')}*`;
+            
+            // Ganti nomor ini dengan nomor WhatsApp Anda
+            const waUrl = "https://wa.me/6281244397735?text=" + encodeURIComponent(msg);
+            window.open(waUrl, '_blank');
+        }
     </script>
 </body>
 </html>
