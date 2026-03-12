@@ -65,6 +65,18 @@
         {% endfor %}
     </main>
 
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+       <h3 class="font-bold text-gray-700 mb-2">Detail Pengiriman:</h3>
+       <input type="text" id="nama-pemesan" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg outline-none">
+       <textarea id="alamat-pemesan" placeholder="Alamat lengkap / Link Google Maps (share location)" class="w-full p-2 border rounded-lg outline-none"></textarea>
+    </div>
+
+    <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50">
+       <button onclick="sendToWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
+           🛒 Checkout ke WhatsApp (<span id="cart-count">0</span>)
+       </button>
+    </div>
+
     <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50">
         <button onclick="sendToWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
             🛒 Checkout ke WhatsApp (<span id="cart-count">0</span>)
@@ -115,28 +127,37 @@
 
         // 5. Fungsi WhatsApp (PASTI BEKERJA)
         function sendToWhatsApp() {
-            let total = 0;
-            let msg = "*Pesanan Baru - Pujasera Digital*\n\n";
-            
-            let hasItems = false;
-            for (let name in cart) {
-                let item = cart[name];
-                msg += `• ${name} (${item.qty}x): Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
-                total += (item.price * item.qty);
-                hasItems = true;
-            }
+    // Ambil data dari form
+    let nama = document.getElementById('nama-pemesan').value;
+    let alamat = document.getElementById('alamat-pemesan').value;
 
-            if (!hasItems) {
-                alert("Keranjang masih kosong! Pilih menu dulu ya.");
-                return;
-            }
+    if (Object.keys(cart).length === 0) {
+        alert("Keranjang masih kosong!");
+        return;
+    }
+    
+    if (!nama || !alamat) {
+        alert("Mohon isi Nama dan Alamat/Lokasi Anda.");
+        return;
+    }
 
-            msg += `\n*Total: Rp ${total.toLocaleString('id-ID')}*`;
-            
-            // Link WhatsApp (ganti 628123456789 dengan nomor Anda)
-            const waUrl = "https://wa.me/6281244397735?text=" + encodeURIComponent(msg);
-            window.open(waUrl, '_blank');
-        }
+    let msg = "*Pesanan Baru - Pujasera Digital*\n\n";
+    msg += `*Nama:* ${nama}\n`;
+    msg += `*Alamat/Lokasi:* ${alamat}\n\n`;
+    msg += "*Daftar Pesanan:*\n";
+
+    let total = 0;
+    for (let name in cart) {
+        let item = cart[name];
+        msg += `• ${name} (${item.qty}x): Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
+        total += (item.price * item.qty);
+    }
+
+    msg += `\n*Total Tagihan: Rp ${total.toLocaleString('id-ID')}*`;
+    
+    const waUrl = "https://wa.me/628123456789?text=" + encodeURIComponent(msg);
+    window.open(waUrl, '_blank');
+}
     </script>
 </body>
 </html>
