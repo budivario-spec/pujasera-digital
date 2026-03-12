@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#ea580c">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Pujasera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .category-section { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 pb-24">
+    <header class="bg-white p-4 shadow-sm sticky top-0 z-30">
+    <div class="flex items-center justify-between mb-4">
+        <a href="/" class="text-xl">🏠</a>
+        
+        <h1 class="text-xl font-bold text-orange-600">Pujasera Digital</h1>
+        
+        <button onclick="toggleSearch()" class="text-xl">🔍</button>
+    </div>
+
+    <div id="search-bar" class="hidden mb-2">
+        <form action="/search" method="GET" class="flex items-center">
+            <input type="text" name="q" placeholder="Cari menu favorit..." 
+                   class="w-full p-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none">
+        </form>
+    </div>
+
+    <div class="overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
+        <button onclick="showCategory('semua', this)" class="category-tab px-5 py-1.5 bg-orange-600 text-white rounded-md text-sm font-bold shadow-md mr-1 transition-all">Semua</button>
+        {% for cat_name in categories.keys() %}
+        <button onclick="showCategory('{{ cat_name }}', this)" class="category-tab px-5 py-1.5 bg-white text-gray-600 rounded-md text-sm font-bold shadow-md mr-1 transition-all border border-gray-200">
+            {{ cat_name|capitalize }}
+        </button>
+        {% endfor %}
+    </div>
+</header>
+
+    <main class="p-4 space-y-8" id="menu-container">
+        {% if query %}
+            <div class="space-y-4">
+                {% if not categories['Hasil Pencarian'] %}
+                    <div class="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <p class="text-gray-700 font-medium text-lg">"{{ query }}" belum tersedia.</p>
+                    </div>
+                {% endif %}
+                <div class="text-center">
+                    <a href="/" class="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-orange-700 transition">Kembali ke Menu Utama</a>
+                </div>
+            </div>
+        {% endif %}
+
+        {% for cat_name, items in categories.items() %}
+        {% if items %}
+        <section data-category="{{ cat_name }}" class="category-section">
+            <h2 class="text-lg font-bold capitalize mb-4 text-gray-700">{{ cat_name }}</h2>
+            <div class="grid grid-cols-2 gap-4">
+                {% for item in items %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 relative overflow-hidden">
+                    {% if item.tersedia == 0 %}
+                    <div class="absolute inset-0 bg-gray-900/60 flex items-center justify-center z-10">
+                        <span class="bg-red-500 text-white text-xs px-2 py-1 rounded">Habis</span>
+                    </div>
+                    {% endif %}
+                    <img src="{{ url_for('static', filename='uploads/' + (item.foto if item.foto else 'default.jpg')) }}" 
+                         class="w-full h-32 object-cover rounded-lg mb-2">
+                    <h3 class="font-semibold text-gray-800">{{ item.nama }}</h3>
+                    <p class="text-orange-600 font-bold text-sm mb-3">Rp {{ "{:,}".format(item.harga).replace(',', '.') }}</p>
+                    <button onclick="addToCart('{{ item.nama }}', {{ item.harga }})" 
+                            class="w-full py-1 bg-orange-500 text-white rounded-lg text-sm {{ 'opacity-50 cursor-not-allowed' if item.tersedia == 0 }}"
+                            {{ 'disabled' if item.tersedia == 0 }}>Pesan</button>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        {% endfor %}
+    </main>
+
+    <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto">
+        <button onclick="sendToWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
+            🛒 Checkout ke WhatsApp (<span id="cart-count">0</span>)
+        </button>
+    </div>
+
+    <script>
+        function toggleSearchIcon() {
+            const input = document.getElementById('search-input');
+            const icon = document.getElementById('search-icon');
+            icon.style.display = input.value.length > 0 ? 'block' : 'none';
+        }
+        toggleSearchIcon();
+
+        function toggleSearch() {
+            const searchBar = document.getElementById('search-bar');
+            searchBar.classList.toggle('hidden');
+        }
+
+        function showCategory(catName, btn) {
+            const sections = document.querySelectorAll('.category-section');
+            sections.forEach(sec => {
+                sec.style.display = (catName === 'semua' || sec.getAttribute('data-category') === catName) ? 'block' : 'none';
+            });
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('bg-orange-600', 'text-white');
+                tab.classList.add('bg-white', 'text-gray-600');
+            });
+            btn.classList.remove('bg-white', 'text-gray-600');
+            btn.classList.add('bg-orange-600', 'text-white');
+        }
+
+        let cart = {};
+        function addToCart(name, price) {
+            cart[name] = cart[name] ? { price: price, qty: cart[name].qty + 1 } : { price: price, qty: 1 };
+            document.getElementById('cart-count').innerText = Object.values(cart).reduce((a, b) => a + b.qty, 0);
+        }
+        function sendToWhatsApp() {
+            let msg = "*Pesanan Baru - Pujasera Digital*\n";
+            let total = 0;
+            for (let name in cart) {
+                msg += `- ${name} (${cart[name].qty}x): Rp ${(cart[name].price * cart[name].qty).toLocaleString()}\n`;
+                total += cart[name].price * cart[name].qty;
+            }
+            msg += `\n*Total: Rp ${total.toLocaleString()}*`;
+            window.open(`https://wa.me/628123456789?text=${encodeURIComponent(msg)}`);
+        }
+    </script>
+</body>
+</html>

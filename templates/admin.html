@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Admin - Pujasera Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4 max-w-lg mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Panel Admin</h1>
+        <a href="/logout" class="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-lg">Logout</a>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl shadow-md mb-8">
+        <h2 class="font-bold text-gray-700 mb-3">Tambah Menu Baru</h2>
+        <form action="/tambah_menu" method="POST" enctype="multipart/form-data" class="space-y-3">
+            <input type="text" name="nama" placeholder="Nama Menu" required class="w-full p-2 border rounded text-sm capitalize">
+            <input type="number" name="harga" placeholder="Harga (Rp)" required class="w-full p-2 border rounded text-sm">
+            <select name="kategori" class="w-full p-2 border rounded text-sm">
+                <option value="makanan">Makanan</option>
+                <option value="lauk">Lauk</option>
+                <option value="sayur">Sayur</option>
+                <option value="minuman">Minuman</option>
+                <option value="camilan">Camilan</option>
+            </select>
+            <div class="border-2 border-dashed p-2 rounded text-sm text-gray-500">
+                <label>Foto Produk:</label>
+                <input type="file" name="foto" accept="image/*" class="w-full mt-1">
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-semibold text-sm">Simpan Menu</button>
+        </form>
+    </div>
+
+<h2 class="font-bold text-gray-700 mt-8 mb-3">Tren Pencarian (Top 10)</h2>
+<div class="bg-white p-4 rounded-xl shadow border border-gray-100">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b">
+                <th class="pb-2">Kata Kunci</th>
+                <th class="pb-2 text-right">Dicari</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in tren_pencarian %}
+            <tr class="border-b last:border-b-0">
+                <td class="py-2">{{ row.kata_kunci }}</td>
+                <td class="py-2 text-right font-bold text-orange-600">{{ row.jumlah }}x</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    <h2 class="font-bold text-gray-700 mb-3">Daftar Menu</h2>
+    <div class="space-y-4">
+        {% for item in menu %}
+        <div class="bg-white p-4 rounded-xl shadow border border-gray-100">
+            <form action="/edit_menu/{{ item.id }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                <div class="flex gap-4 items-start">
+                    <img src="{{ url_for('static', filename='uploads/' + (item.foto if item.foto else 'default.jpg')) }}" 
+                         class="w-16 h-16 object-cover rounded-lg border">
+                    <div class="flex-1 space-y-1">
+                        <input type="text" name="nama" value="{{ item.nama }}" class="font-bold text-gray-800 w-full border-b text-sm">
+                        <input type="number" name="harga" value="{{ item.harga }}" class="text-xs text-orange-600 font-semibold w-full border-b">
+                        <select name="kategori" class="text-[10px] w-full border rounded">
+                            <option value="makanan" {{ 'selected' if item.kategori == 'makanan' }}>Makanan</option>
+                            <option value="lauk" {{ 'selected' if item.kategori == 'lauk' }}>Lauk</option>
+                            <option value="sayur" {{ 'selected' if item.kategori == 'sayur' }}>Sayur</option>
+                            <option value="minuman" {{ 'selected' if item.kategori == 'minuman' }}>Minuman</option>
+                            <option value="camilan" {{ 'selected' if item.kategori == 'camilan' }}>Camilan</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <input type="file" name="foto" accept="image/*" class="w-full text-[10px] text-gray-500">
+                
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white py-1 rounded text-xs font-bold">Simpan</button>
+                    <a href="/toggle/{{ item.id }}" class="flex-1 text-center py-1 rounded text-xs font-bold {{ 'bg-green-100 text-green-700' if item.tersedia == 1 else 'bg-red-100 text-red-700' }}">
+                        {{ 'Ready' if item.tersedia == 1 else 'Habis' }}
+                    </a>
+                    <a href="/delete_menu/{{ item.id }}" onclick="return confirm('Hapus menu ini?')" 
+                       class="px-3 bg-red-500 text-white rounded text-xs flex items-center font-bold">X</a>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
