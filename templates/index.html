@@ -1,51 +1,67 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#ea580c">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pujasera Anekarasa</title>
+    <title>Menu Pujasera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .category-section { display: block; }
+        /* Style untuk dialog agar tetap rapi */
         dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
     </style>
 </head>
 <body class="bg-gray-50 pb-24">
     <header class="bg-white p-4 shadow-sm sticky top-0 z-30">
-    <div class="flex items-center justify-between mb-4">
-        <a href="/" class="text-2xl">🏠</a>
-        <h1 class="text-xl font-bold text-orange-600">Pujasera Anekarasa</h1>
-        <button onclick="toggleSearch()" class="text-2xl">🔍</button>
-    </div>
+        <div class="flex items-center justify-between mb-4">
+            <a href="/" class="text-xl">🏠</a>
+            <h1 class="text-xl font-bold text-orange-600">Pujasera Anekarasa</h1>
+            <button onclick="toggleSearch()" class="text-xl">🔍</button>
+        </div>
 
-    <div id="search-bar" class="hidden mb-4">
-        <input type="text" onkeyup="filterMenu(this.value)" placeholder="Cari menu favorit..." 
-               class="w-full p-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none">
-    </div>
+        <div class="text-center text-xs text-gray-500 mb-4 italic">
+            "Semua ada, tak perlu ke mana-mana"
+        </div>
 
-    <div class="overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
-        <button onclick="showCategory('semua', this)" class="category-tab px-5 py-1.5 bg-orange-600 text-white rounded-md text-sm font-bold shadow-md mr-1 transition-all">Semua</button>
-        {% for cat_name in categories.keys() %}
-        <button onclick="showCategory('{{ cat_name }}', this)" class="category-tab px-5 py-1.5 bg-white text-gray-600 rounded-md text-sm font-bold shadow-md mr-1 transition-all border border-gray-200">
-            {{ cat_name|capitalize }}
-        </button>
-        {% endfor %}
-    </div>
+        <div id="search-bar" class="hidden mb-2">
+            <form action="/search" method="GET" class="flex items-center">
+                <input type="text" name="q" id="search-input" placeholder="Cari menu favorit..." 
+                       class="w-full p-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none">
+            </form>
+        </div>
+
+        <div class="overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
+            <button onclick="showCategory('semua', this)" class="category-tab px-5 py-1.5 bg-orange-600 text-white rounded-md text-sm font-bold shadow-md mr-1 transition-all">Semua</button>
+            {% for cat_name in categories.keys() %}
+            <button onclick="showCategory('{{ cat_name }}', this)" class="category-tab px-5 py-1.5 bg-white text-gray-600 rounded-md text-sm font-bold shadow-md mr-1 transition-all border border-gray-200">
+                {{ cat_name|capitalize }}
+            </button>
+            {% endfor %}
+        </div>
     </header>
 
     <main class="p-4 space-y-8" id="menu-container">
         {% for cat_name, items in categories.items() %}
         {% if items %}
-        <section class="category-section">
+        <section data-category="{{ cat_name }}" class="category-section">
             <h2 class="text-lg font-bold capitalize mb-4 text-gray-700">{{ cat_name }}</h2>
             <div class="grid grid-cols-2 gap-4">
                 {% for item in items %}
-                <div class="bg-white rounded-xl shadow-sm p-3">
-                    <img src="{{ url_for('static', filename='uploads/' + (item.foto or 'default.jpg')) }}" class="w-full h-32 object-cover rounded-lg mb-2">
-                    <h3 class="font-semibold">{{ item.nama }}</h3>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 relative overflow-hidden">
+                    {% if item.tersedia == 0 %}
+                    <div class="absolute inset-0 bg-gray-900/60 flex items-center justify-center z-10">
+                        <span class="bg-red-500 text-white text-xs px-2 py-1 rounded">Habis</span>
+                    </div>
+                    {% endif %}
+                    <img src="{{ url_for('static', filename='uploads/' + (item.foto if item.foto else 'default.jpg')) }}" 
+                         class="w-full h-32 object-cover rounded-lg mb-2">
+                    <h3 class="font-semibold text-gray-800">{{ item.nama }}</h3>
                     <p class="text-orange-600 font-bold text-sm mb-3">Rp {{ "{:,}".format(item.harga).replace(',', '.') }}</p>
                     <button onclick="addToCart('{{ item.nama }}', {{ item.harga }}, this)" 
-                            class="w-full py-1 bg-orange-500 text-white rounded-lg text-sm"
+                            class="w-full py-1 bg-orange-500 text-white rounded-lg text-sm {{ 'opacity-50 cursor-not-allowed' if item.tersedia == 0 }}"
                             {% if item.tersedia == 0 %}disabled{% endif %}>Pesan</button>
                 </div>
                 {% endfor %}
@@ -55,83 +71,168 @@
         {% endfor %}
     </main>
 
-    <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40">
+    <div class="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50">
         <button onclick="showCheckout()" class="w-full bg-green-600 text-white py-3 rounded-full shadow-lg font-bold">
-            🛒 Checkout (<span id="cart-count">0</span>)
+            🛒 Checkout ke WhatsApp (<span id="cart-count">0</span>)
         </button>
     </div>
 
-    <dialog id="checkout-dialog" class="p-6 rounded-2xl shadow-xl w-11/12 max-w-md border-0">
-        <h3 class="font-bold text-lg mb-4 text-center">Struk Pesanan</h3>
-        <div id="receipt-content" class="text-sm font-mono mb-4 border-b border-dashed pb-2"></div>
-        <input type="text" id="customer-name" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg outline-none">
-        <textarea id="customer-address" placeholder="Alamat lengkap" class="w-full p-2 mb-4 border rounded-lg outline-none"></textarea>
-        <div class="flex gap-2">
-            <button onclick="document.getElementById('checkout-dialog').close()" class="w-full py-2 bg-gray-200 rounded-lg">Batal</button>
-            <button onclick="confirmOrder()" class="w-full py-2 bg-green-600 text-white rounded-lg font-bold">Kirim ke WA</button>
-        </div>
-    </dialog>
-
-    <div id="toast" class="hidden fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-        <div class="bg-gray-800 text-white px-6 py-4 rounded-xl shadow-lg mx-4 text-center animate-pulse">
-            <span id="toast-message" class="font-medium text-sm"></span>
-        </div>
+<dialog id="checkout-dialog" class="p-6 rounded-2xl shadow-xl w-11/12 max-w-md border-0">
+    <h3 class="font-bold text-lg mb-4 text-center">Struk Pesanan</h3>
+    
+    <div id="receipt-content" class="text-sm font-mono mb-4 border-b border-dashed pb-2"></div>
+    
+    <input type="text" id="customer-name" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg">
+    <textarea id="customer-address" placeholder="Alamat lengkap / Lokasi" class="w-full p-2 mb-4 border rounded-lg"></textarea>
+    
+    <div class="flex gap-2">
+        <button onclick="document.getElementById('checkout-dialog').close()" class="w-full py-2 bg-gray-200 rounded-lg">Batal</button>
+        <button onclick="confirmOrder()" class="w-full py-2 bg-green-600 text-white rounded-lg font-bold">Kirim ke WA</button>
     </div>
+</dialog>
 
     <script>
         let cart = {};
 
+        function toggleSearch() {
+            const searchBar = document.getElementById('search-bar');
+            if (searchBar) searchBar.classList.toggle('hidden');
+        }
+
+        function showCategory(catName, btn) {
+            const sections = document.querySelectorAll('.category-section');
+            sections.forEach(sec => {
+                sec.style.display = (catName === 'semua' || sec.getAttribute('data-category') === catName) ? 'block' : 'none';
+            });
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('bg-orange-600', 'text-white');
+                tab.classList.add('bg-white', 'text-gray-600');
+            });
+            btn.classList.remove('bg-white', 'text-gray-600');
+            btn.classList.add('bg-orange-600', 'text-white');
+        }
+
         function addToCart(name, price, btn) {
-            cart[name] = cart[name] ? { ...cart[name], qty: cart[name].qty + 1 } : { price, qty: 1 };
-            document.getElementById('cart-count').innerText = Object.values(cart).reduce((a, b) => a + b.qty, 0);
-            
-            btn.disabled = true;
-            setTimeout(() => btn.disabled = false, 500);
-            showToast(`"${name}" ditambahkan`);
+    // 1. Tambahkan ke keranjang
+    if (!cart[name]) {
+        cart[name] = { price: price, qty: 1 };
+    } else {
+        cart[name].qty += 1;
+    }
+    document.getElementById('cart-count').innerText = Object.values(cart).reduce((a, b) => a + b.qty, 0);
+
+    // 2. Disable tombol sementara
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+    }, 500);
+
+    // 3. Munculkan notifikasi (Toast)
+    showToast(`"${name}" masuk keranjang`);
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-message');
+    
+    toastMsg.innerText = message;
+    toast.classList.remove('hidden');
+    
+    // Hilangkan otomatis setelah 2 detik
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 2000);
+}
+
+        function sendToWhatsApp() {
+            if (Object.keys(cart).length === 0) {
+                alert("Keranjang masih kosong!");
+                return;
+            }
+            document.getElementById('delivery-dialog').showModal();
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-message').innerText = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2000);
+        function closeDialog() {
+            document.getElementById('delivery-dialog').close();
         }
 
-        function showCheckout() {
-            if (Object.keys(cart).length === 0) return alert("Keranjang kosong!");
-            let receiptHtml = `<div class="flex justify-between font-bold mb-2"><span>Menu</span><span>Jml</span></div>`;
+        function saveAndCheckout() {
+            let nama = document.getElementById('nama-pemesan').value;
+            let alamat = document.getElementById('alamat-pemesan').value;
+
+            if (!nama || !alamat) {
+                alert("Mohon isi Nama dan Alamat pengiriman!");
+                return;
+            }
+
+            let msg = "*Pesanan Baru - Pujasera Anekarasa*\n\n";
+            msg += `*Nama:* ${nama}\n`;
+            msg += `*Alamat/Lokasi:* ${alamat}\n\n`;
+            msg += "*Daftar Pesanan:*\n";
+
             let total = 0;
             for (let name in cart) {
-                receiptHtml += `<div class="flex justify-between items-center mb-1"><span>${name}</span>
-                    <div class="flex items-center gap-2"><button onclick="changeQty('${name}', -1)" class="px-2 bg-red-100 rounded">-</button>
-                    <span>${cart[name].qty}</span><button onclick="changeQty('${name}', 1)" class="px-2 bg-green-100 rounded">+</button></div></div>`;
-                total += cart[name].price * cart[name].qty;
+                let item = cart[name];
+                msg += `• ${name} (${item.qty}x): Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
+                total += (item.price * item.qty);
             }
-            document.getElementById('receipt-content').innerHTML = receiptHtml + `<div class="mt-4 pt-2 border-t font-bold">Total: Rp ${total.toLocaleString('id-ID')}</div>`;
-            document.getElementById('checkout-dialog').showModal();
-        }
-
-        function changeQty(name, delta) {
-            cart[name].qty += delta;
-            if (cart[name].qty <= 0) delete cart[name];
-            Object.keys(cart).length === 0 ? document.getElementById('checkout-dialog').close() : showCheckout();
-            document.getElementById('cart-count').innerText = Object.values(cart).reduce((a, b) => a + b.qty, 0);
-        }
-
-        function confirmOrder() {
-            const name = document.getElementById('customer-name').value;
-            const addr = document.getElementById('customer-address').value;
-            if (!name || !addr) return alert("Lengkapi Nama & Alamat!");
-
-            let msg = `*Pesanan Anekarasa*\nNama: ${name}\nAlamat: ${addr}\n\n`;
-            let total = 0;
-            for (let n in cart) {
-                msg += `• ${n} (${cart[n].qty}x): Rp ${(cart[n].price * cart[n].qty).toLocaleString()}\n`;
-                total += cart[n].price * cart[n].qty;
-            }
-            msg += `\n*Total: Rp ${total.toLocaleString()}*`;
+            msg += `\n*Total Tagihan: Rp ${total.toLocaleString('id-ID')}*`;
+            
             window.open("https://wa.me/6281244397735?text=" + encodeURIComponent(msg), '_blank');
+            closeDialog();
         }
+
+function showCheckout() {
+    let receiptHtml = `<div class="flex justify-between font-bold mb-2"><span>Menu</span><span>Jml</span></div>`;
+    let total = 0;
+
+    for (let name in cart) {
+        let item = cart[name];
+        total += item.price * item.qty;
+        receiptHtml += `
+            <div class="flex justify-between items-center mb-1">
+                <span>${name}</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeQty('${name}', -1)" class="px-2 bg-red-100 rounded">-</button>
+                    <span>${item.qty}</span>
+                    <button onclick="changeQty('${name}', 1)" class="px-2 bg-green-100 rounded">+</button>
+                </div>
+            </div>`;
+    }
+    receiptHtml += `<div class="mt-4 pt-2 border-t font-bold">Total: Rp ${total.toLocaleString()}</div>`;
+    
+    document.getElementById('receipt-content').innerHTML = receiptHtml;
+    document.getElementById('checkout-dialog').showModal();
+}
+
+function changeQty(name, delta) {
+    cart[name].qty += delta;
+    if (cart[name].qty <= 0) delete cart[name];
+    showCheckout(); // Refresh tampilan struk
+}
+
+function confirmOrder() {
+    const name = document.getElementById('customer-name').value;
+    const address = document.getElementById('customer-address').value;
+
+    if (!name || !address) return alert("Mohon isi Nama dan Alamat!");
+
+    let message = `*Struk Pesanan Anekarasa*\nNama: ${name}\nAlamat: ${address}\n\n`;
+    // ... sisa kode loop pesanan Anda ...
+    
+    // GANTI nomor di bawah ini dengan nomor asli Anda!
+    const waLink = `https://wa.me/6281244397735?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
+}
     </script>
+
+<div id="toast" class="hidden fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+    <div class="bg-gray-800 text-white px-6 py-4 rounded-xl shadow-lg animate-pulse mx-4 text-center">
+        <span id="toast-message" class="font-medium text-sm"></span>
+    </div>
+</div>
+
 </body>
 </html>
