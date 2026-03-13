@@ -185,6 +185,14 @@ function showToast(message) {
         }
 
 function showCheckout() {
+    // Cek apakah keranjang kosong
+    if (Object.keys(cart).length === 0) {
+        // Tampilkan pesan jika kosong
+        alert("Keranjang masih kosong, silakan pilih menu terlebih dahulu.");
+        return; // Hentikan fungsi agar dialog tidak terbuka
+    }
+
+    // Jika ada isinya, lanjut jalankan kode di bawah
     let receiptHtml = `<div class="flex justify-between font-bold mb-2"><span>Menu</span><span>Jml</span></div>`;
     let total = 0;
 
