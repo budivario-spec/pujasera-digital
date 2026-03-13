@@ -87,6 +87,20 @@
         </div>
     </dialog>
 
+<dialog id="checkout-dialog" class="p-6 rounded-2xl shadow-xl w-11/12 max-w-md border-0">
+    <h3 class="font-bold text-lg mb-4 text-center">Struk Pesanan</h3>
+    
+    <div id="receipt-content" class="text-sm font-mono mb-4 border-b border-dashed pb-2">
+        </div>
+    
+    <input type="text" id="customer-name" placeholder="Nama Anda" class="w-full p-2 mb-2 border rounded-lg">
+    
+    <div class="flex gap-2">
+        <button onclick="document.getElementById('checkout-dialog').close()" class="w-full py-2 bg-gray-200 rounded-lg">Kembali</button>
+        <button onclick="confirmOrder()" class="w-full py-2 bg-green-600 text-white rounded-lg font-bold">Kirim ke WA</button>
+    </div>
+</dialog>
+
     <script>
         let cart = {};
 
@@ -179,6 +193,50 @@ function showToast(message) {
             window.open("https://wa.me/6281244397735?text=" + encodeURIComponent(msg), '_blank');
             closeDialog();
         }
+
+function showCheckout() {
+    let receiptHtml = `<div class="flex justify-between font-bold mb-2"><span>Menu</span><span>Jml</span></div>`;
+    let total = 0;
+
+    for (let name in cart) {
+        let item = cart[name];
+        total += item.price * item.qty;
+        receiptHtml += `
+            <div class="flex justify-between items-center mb-1">
+                <span>${name}</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeQty('${name}', -1)" class="px-2 bg-red-100 rounded">-</button>
+                    <span>${item.qty}</span>
+                    <button onclick="changeQty('${name}', 1)" class="px-2 bg-green-100 rounded">+</button>
+                </div>
+            </div>`;
+    }
+    receiptHtml += `<div class="mt-4 pt-2 border-t font-bold">Total: Rp ${total.toLocaleString()}</div>`;
+    
+    document.getElementById('receipt-content').innerHTML = receiptHtml;
+    document.getElementById('checkout-dialog').showModal();
+}
+
+function changeQty(name, delta) {
+    cart[name].qty += delta;
+    if (cart[name].qty <= 0) delete cart[name];
+    showCheckout(); // Refresh tampilan struk
+}
+
+function confirmOrder() {
+    const name = document.getElementById('customer-name').value;
+    if (!name) return alert("Masukkan nama Anda!");
+
+    // Membuat teks struk yang rapi untuk WA
+    let message = `*Struk Pesanan Anekarasa*\nNama: ${name}\n\n`;
+    for (let name in cart) {
+        message += `${name} x ${cart[name].qty} = Rp ${cart[name].price * cart[name].qty}\n`;
+    }
+    message += `\n*Total Bayar: Rp ${Object.values(cart).reduce((a, b) => a + (b.price * b.qty), 0).toLocaleString()}*`;
+
+    const waLink = `https://wa.me/628XXXXXXXXXX?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
+}
     </script>
 
 <div id="toast" class="hidden fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
